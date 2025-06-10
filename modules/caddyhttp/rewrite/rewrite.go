@@ -244,7 +244,13 @@ func (rewr Rewrite) Rewrite(r *http.Request, repl *caddy.Replacer) bool {
 	// strip path prefix or suffix
 	if rewr.StripPathPrefix != "" {
 		prefix := repl.ReplaceAll(rewr.StripPathPrefix, "")
-		mergeSlashes := !strings.Contains(prefix, "//")
+		if !strings.HasPrefix(prefix, "/") {
+			prefix = "/" + prefix
+		}
+		mergeSlashes := !(strings.Contains(prefix, "//") || strings.Contains(r.URL.Path, "//"))
+		zap.L().Sugar().Debugf("prefix %v", prefix)
+		zap.L().Sugar().Debugf("r.URL.Path %v", r.URL.Path)
+		zap.L().Sugar().Debugf("mergeSlashes %v", mergeSlashes)
 		changePath(r, func(escapedPath string) string {
 			escapedPath = caddyhttp.CleanPath(escapedPath, mergeSlashes)
 			return trimPathPrefix(escapedPath, prefix)
@@ -252,7 +258,10 @@ func (rewr Rewrite) Rewrite(r *http.Request, repl *caddy.Replacer) bool {
 	}
 	if rewr.StripPathSuffix != "" {
 		suffix := repl.ReplaceAll(rewr.StripPathSuffix, "")
-		mergeSlashes := !strings.Contains(suffix, "//")
+		mergeSlashes := !(strings.Contains(suffix, "//") || strings.Contains(r.URL.Path, "//"))
+		zap.L().Sugar().Debugf("prefix %v", suffix)
+		zap.L().Sugar().Debugf("r.URL.Path %v", r.URL.Path)
+		zap.L().Sugar().Debugf("mergeSlashes %v", mergeSlashes)
 		changePath(r, func(escapedPath string) string {
 			escapedPath = caddyhttp.CleanPath(escapedPath, mergeSlashes)
 			return reverse(trimPathPrefix(reverse(escapedPath), reverse(suffix)))
